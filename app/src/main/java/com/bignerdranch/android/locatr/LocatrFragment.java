@@ -19,8 +19,11 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.List;
@@ -135,8 +138,21 @@ public class LocatrFragment extends SupportMapFragment {
 
    private void updateUI() {
       if (mMap != null && mMapImage != null) {
+         // lat-lon of the nearest Flickr image
          LatLng itemPoint = new LatLng(mMapItem.getLat(), mMapItem.getLon());
+         // lat-lon of the current location
          LatLng myPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+
+         // create MarkerOptions objects that describe to GoogleMap what to draw
+         BitmapDescriptor itemBitmap = BitmapDescriptorFactory.fromBitmap(mMapImage);
+         // image of the nearest Flickr
+         MarkerOptions itemMarker = new MarkerOptions().position(itemPoint).icon(itemBitmap);
+         // marker icon for the current location
+         MarkerOptions myMarker = new MarkerOptions().position(myPoint);
+         mMap.clear();
+         mMap.addMarker(itemMarker);
+         mMap.addMarker(myMarker);
+
          // point camera at a specific LatLngBounds (a rectangle around itemPoint and myPoint)
          LatLngBounds bounds = new LatLngBounds.Builder().include(itemPoint).include(myPoint).build();
          int margin = getResources().getDimensionPixelSize(R.dimen.map_inset_margin);
