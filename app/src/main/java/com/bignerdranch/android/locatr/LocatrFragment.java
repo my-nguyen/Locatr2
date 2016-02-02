@@ -5,21 +5,22 @@ import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,6 +30,10 @@ import java.util.List;
  */
 public class LocatrFragment extends SupportMapFragment {
    private GoogleApiClient mClient;
+   private GoogleMap       mMap;
+   private Bitmap          mMapImage;
+   private GalleryItem     mMapItem;
+   private Location        mCurrentLocation;
    private static final String TAG = "LocatrFragment";
 
    public static LocatrFragment newInstance() {
@@ -55,6 +60,17 @@ public class LocatrFragment extends SupportMapFragment {
                }
             })
             .build();
+      // SupportMapFragment creates a MapView, which is a host for GoogleMap. acquire a reference to
+      // this master object (asynchronously: calling this from within onCreate(Bundle), you will get
+      // a reference to a GoogleMap once it is created and initialized)
+      getMapAsync(new OnMapReadyCallback() {
+         @Override
+         public void onMapReady(GoogleMap googleMap) {
+            mMap = googleMap;
+            // zoom in when GoogleMap is first received
+            updateUI();
+         }
+      });
    }
 
    @Override
@@ -117,12 +133,28 @@ public class LocatrFragment extends SupportMapFragment {
       });
    }
 
+   private void updateUI() {
+      if (mMap != null && mMapImage != null) {
+         LatLng itemPoint = new LatLng(mMapItem.getLat(), mMapItem.getLon());
+         LatLng myPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+         // point camera at a specific LatLngBounds (a rectangle around itemPoint and myPoint)
+         LatLngBounds bounds = new LatLngBounds.Builder().include(itemPoint).include(myPoint).build();
+         int margin = getResources().getDimensionPixelSize(R.dimen.map_inset_margin);
+         // build a CameraUpdate to move GoogleMap around
+         CameraUpdate update = CameraUpdateFactory.newLatLngBounds(bounds, margin);
+         // update the map via animateCamera()
+         mMap.animateCamera(update);
+      }
+   }
+
    private class SearchTask extends AsyncTask<Location, Void, Void> {
       private GalleryItem  mGalleryItem;
       private Bitmap       mBitmap;
+      private Location     mLocation;
 
       @Override
       protected Void doInBackground(Location... params) {
+         mLocation = params[0];
          FlickrFetchr fetchr = new FlickrFetchr();
          // perform a search on Flickr
          List<GalleryItem> items = fetchr.searchPhotos(params[0]);
@@ -144,6 +176,12 @@ public class LocatrFragment extends SupportMapFragment {
 
       @Override
       protected void onPostExecute(Void result) {
+         // save query results
+         mMapImage = mBitmap;
+         mMapItem = mGalleryItem;
+         mCurrentLocation = mLocation;
+         // zoom in when the search is finished (your current location)
+         updateUI();
       }
    }
 }

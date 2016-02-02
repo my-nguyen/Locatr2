@@ -33,7 +33,8 @@ public class FlickrFetchr {
          .appendQueryParameter("api_key", API_KEY)
          .appendQueryParameter("format", "json")
          .appendQueryParameter("nojsoncallback", "1")
-         .appendQueryParameter("extras", "url_s")
+         // add lat-lon to query
+         .appendQueryParameter("extras", "url_s,geo")
          .build();
 
    // this method fetches raw data from a URL and returns it as an array of bytes
@@ -137,6 +138,9 @@ public class FlickrFetchr {
          // ignore images that do not have an image url
          if (photoJsonObject.has("url_s")) {
             item.setUrl(photoJsonObject.getString("url_s"));
+            // pull latitute-longitude data from JSON
+            item.setLat(photoJsonObject.getDouble("latitude"));
+            item.setLon(photoJsonObject.getDouble("longitude"));
             // read in the owner attribute
             item.setOwner(photoJsonObject.getString("owner"));
             // add GalleryItem to a list
