@@ -1,6 +1,9 @@
 package com.bignerdranch.android.locatr;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -16,6 +19,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by My on 2/1/2016.
@@ -113,7 +119,40 @@ public class LocatrFragment extends Fragment {
          @Override
          public void onLocationChanged(Location location) {
             Log.i(TAG, "Got a fix: " + location);
+            new SearchTask().execute(location);
          }
       });
+   }
+
+   private class SearchTask extends AsyncTask<Location, Void, Void> {
+      private GalleryItem  mGalleryItem;
+      private Bitmap       mBitmap;
+
+      @Override
+      protected Void doInBackground(Location... params) {
+         FlickrFetchr fetchr = new FlickrFetchr();
+         // perform a search on Flickr
+         List<GalleryItem> items = fetchr.searchPhotos(params[0]);
+         // select the first GalleryItem
+         if (items.size() != 0) {
+            mGalleryItem = items.get(0);
+            try {
+               // download the GalleryItem's associated image data
+               byte[] bytes = fetchr.getUrlBytes(mGalleryItem.getUrl());
+               // decode the downloaded data
+               mBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            }
+            catch (IOException ioe) {
+               Log.i(TAG, "Unable to download bitmap", ioe);
+            }
+         }
+         return null;
+      }
+
+      @Override
+      protected void onPostExecute(Void result) {
+         // display the image on mImageView
+         mImageView.setImageBitmap(mBitmap);
+      }
    }
 }

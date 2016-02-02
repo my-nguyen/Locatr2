@@ -79,7 +79,7 @@ public class FlickrFetchr {
       return downloadGalleryItems(url);
    }
 
-   private List<GalleryItem> searchPhotos(Location location) {
+   public List<GalleryItem> searchPhotos(Location location) {
       String url = buildUrl(location);
       return downloadGalleryItems(url);
    }
